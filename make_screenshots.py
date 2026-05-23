@@ -38,25 +38,91 @@ MOCK_INFO = {
 }
 
 MOCK_DEVICES = [
-    {"ip": "192.168.1.10",  "name": "iPhone",        "mac": "AA:BB:CC:11:22:33", "conn": "ath1",  "band": "5 GHz"},
-    {"ip": "192.168.1.11",  "name": "MacBook",        "mac": "AA:BB:CC:11:22:44", "conn": "ath1",  "band": "5 GHz"},
-    {"ip": "192.168.1.12",  "name": "SmartTV",        "mac": "AA:BB:CC:11:22:55", "conn": "ath1",  "band": "5 GHz"},
-    {"ip": "192.168.1.13",  "name": "PlayStation",    "mac": "AA:BB:CC:11:22:66", "conn": "ath1",  "band": "5 GHz"},
-    {"ip": "192.168.1.20",  "name": "Thermostat",     "mac": "AA:BB:CC:33:44:11", "conn": "2.4G",  "band": "2.4 GHz"},
-    {"ip": "192.168.1.21",  "name": "DoorCam",        "mac": "AA:BB:CC:33:44:22", "conn": "2.4G",  "band": "2.4 GHz"},
-    {"ip": "192.168.1.22",  "name": "SmartPlug",      "mac": "AA:BB:CC:33:44:33", "conn": "2.4G",  "band": "2.4 GHz"},
-    {"ip": "192.168.1.23",  "name": "Tablet",         "mac": "AA:BB:CC:33:44:44", "conn": "2.4G",  "band": "2.4 GHz"},
-    {"ip": "192.168.1.24",  "name": "Printer",        "mac": "AA:BB:CC:33:44:55", "conn": "2.4G",  "band": "2.4 GHz"},
-    {"ip": "192.168.1.30",  "name": "NAS",            "mac": "AA:BB:CC:55:66:11", "conn": "eth0",  "band": "Wired"},
-    {"ip": "192.168.1.31",  "name": "Desktop",        "mac": "AA:BB:CC:55:66:22", "conn": "eth0",  "band": "Wired"},
-    {"ip": "192.168.1.32",  "name": "",               "mac": "AA:BB:CC:55:66:33", "conn": "eth0",  "band": "Wired"},
+    {
+        "ip": "192.168.1.10",
+        "name": "iPhone",
+        "mac": "AA:BB:CC:11:22:33",
+        "conn": "ath1",
+        "band": "5 GHz",
+    },
+    {
+        "ip": "192.168.1.11",
+        "name": "MacBook",
+        "mac": "AA:BB:CC:11:22:44",
+        "conn": "ath1",
+        "band": "5 GHz",
+    },
+    {
+        "ip": "192.168.1.12",
+        "name": "SmartTV",
+        "mac": "AA:BB:CC:11:22:55",
+        "conn": "ath1",
+        "band": "5 GHz",
+    },
+    {
+        "ip": "192.168.1.13",
+        "name": "PlayStation",
+        "mac": "AA:BB:CC:11:22:66",
+        "conn": "ath1",
+        "band": "5 GHz",
+    },
+    {
+        "ip": "192.168.1.20",
+        "name": "Thermostat",
+        "mac": "AA:BB:CC:33:44:11",
+        "conn": "2.4G",
+        "band": "2.4 GHz",
+    },
+    {
+        "ip": "192.168.1.21",
+        "name": "DoorCam",
+        "mac": "AA:BB:CC:33:44:22",
+        "conn": "2.4G",
+        "band": "2.4 GHz",
+    },
+    {
+        "ip": "192.168.1.22",
+        "name": "SmartPlug",
+        "mac": "AA:BB:CC:33:44:33",
+        "conn": "2.4G",
+        "band": "2.4 GHz",
+    },
+    {
+        "ip": "192.168.1.23",
+        "name": "Tablet",
+        "mac": "AA:BB:CC:33:44:44",
+        "conn": "2.4G",
+        "band": "2.4 GHz",
+    },
+    {
+        "ip": "192.168.1.24",
+        "name": "Printer",
+        "mac": "AA:BB:CC:33:44:55",
+        "conn": "2.4G",
+        "band": "2.4 GHz",
+    },
+    {
+        "ip": "192.168.1.30",
+        "name": "NAS",
+        "mac": "AA:BB:CC:55:66:11",
+        "conn": "eth0",
+        "band": "Wired",
+    },
+    {
+        "ip": "192.168.1.31",
+        "name": "Desktop",
+        "mac": "AA:BB:CC:55:66:22",
+        "conn": "eth0",
+        "band": "Wired",
+    },
+    {"ip": "192.168.1.32", "name": "", "mac": "AA:BB:CC:55:66:33", "conn": "eth0", "band": "Wired"},
 ]
 
 MOCK_IFACE_STATS = [
-    {"port": "WAN",                       "status": "1000M/Full", "tx_bps": 18432,  "rx_bps": 52428},
-    {"port": "2.4 GHz WLAN b/g/n/ax",    "status": "573.5M",    "tx_bps": 9216,   "rx_bps": 12288},
-    {"port": "5 GHz WLAN a/n/ac/ax/be",  "status": "1201M",     "tx_bps": 36864,  "rx_bps": 102400},
-    {"port": "WLAN Backhaul",             "status": "2402M",     "tx_bps": 0,      "rx_bps": 0},
+    {"port": "WAN", "status": "1000M/Full", "tx_bps": 18432, "rx_bps": 52428},
+    {"port": "2.4 GHz WLAN b/g/n/ax", "status": "573.5M", "tx_bps": 9216, "rx_bps": 12288},
+    {"port": "5 GHz WLAN a/n/ac/ax/be", "status": "1201M", "tx_bps": 36864, "rx_bps": 102400},
+    {"port": "WLAN Backhaul", "status": "2402M", "tx_bps": 0, "rx_bps": 0},
 ]
 
 
@@ -112,14 +178,27 @@ async def take_screenshots() -> None:
             await pilot.pause(0.1)
             throughput = app.query_one("#throughput", orbitui.ThroughputPanel)
             for tx, rx in [
-                (8192, 40960), (10240, 45056), (12288, 49152),
-                (15360, 51200), (18432, 52428),
+                (8192, 40960),
+                (10240, 45056),
+                (12288, 49152),
+                (15360, 51200),
+                (18432, 52428),
             ]:
                 d = _make_mock_data()
                 d.iface_stats = [
-                    {"port": "WAN",                      "status": "1000M/Full", "tx_bps": tx,    "rx_bps": rx},
-                    {"port": "2.4 GHz WLAN b/g/n/ax",   "status": "573.5M",    "tx_bps": tx//2, "rx_bps": rx//4},
-                    {"port": "5 GHz WLAN a/n/ac/ax/be",  "status": "1201M",     "tx_bps": tx,    "rx_bps": rx//2},
+                    {"port": "WAN", "status": "1000M/Full", "tx_bps": tx, "rx_bps": rx},
+                    {
+                        "port": "2.4 GHz WLAN b/g/n/ax",
+                        "status": "573.5M",
+                        "tx_bps": tx // 2,
+                        "rx_bps": rx // 4,
+                    },
+                    {
+                        "port": "5 GHz WLAN a/n/ac/ax/be",
+                        "status": "1201M",
+                        "tx_bps": tx,
+                        "rx_bps": rx // 2,
+                    },
                 ]
                 throughput.update_data(d)
             await pilot.pause(0.1)
