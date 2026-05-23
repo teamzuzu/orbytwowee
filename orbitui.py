@@ -239,7 +239,7 @@ class RouterInfoPanel(Static):
         status_text  = "UP" if d.internet_up else "DOWN"
 
         lines = [
-            f"[bold cyan]● Router Info[/]",
+            "[bold cyan]● Router Info[/]",
             "",
             _kv("Model",    f"[bold]{d.model}[/]"),
             _kv("Firmware", d.firmware),

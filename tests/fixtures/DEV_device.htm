@@ -1,0 +1,90 @@
+<!DOCTYPE HTML>
+<html>
+<head><title>NETGEAR Router RBR750</title></head>
+<body>
+<form id="target" method="post" action="devices.cgi">
+<input type="hidden" name="buttonHit" value="">
+<input type="hidden" name="buttonValue" value="">
+
+<table>
+<tr><td colspan="4"><b>Connected Devices</b></td></tr>
+<tr>
+  <td><span class="thead">IP Address</span></td>
+  <td><span class="thead">Device Name</span></td>
+  <td><span class="thead">MAC Address</span></td>
+  <td><span class="thead">Connection Type</span></td>
+</tr>
+
+<!-- Wired — band label: "Wired" (conn=eth0) -->
+<tr valign="middle" align="center">
+  <td>192.168.0.1</td><td>--</td><td>78:9A:18:FA:DC:87</td><td>eth0</td>
+</tr>
+<tr valign="middle" align="center">
+  <td>192.168.0.248</td><td>QNAP</td><td>24:5E:BE:32:DF:75</td><td>eth0</td>
+</tr>
+<tr valign="middle" align="center">
+  <td>192.168.6.5</td><td>BABYCHONG</td><td>D0:11:E5:81:A8:68</td><td>eth0</td>
+</tr>
+
+<!-- 5 GHz — band label: "5 GHz" (conn=ath1) -->
+<tr valign="middle" align="center">
+  <td>192.168.0.10</td><td>Tapo_SmartPlug</td><td>E8:48:B8:C7:40:EA</td><td>ath1</td>
+</tr>
+<tr valign="middle" align="center">
+  <td>192.168.0.15</td><td>SonosZP</td><td>38:42:0B:F4:E5:CA</td><td>ath1</td>
+</tr>
+<tr valign="middle" align="center">
+  <td>192.168.0.22</td><td>Tapo_SmartPlug</td><td>B0:95:75:64:98:3B</td><td>ath1</td>
+</tr>
+<tr valign="middle" align="center">
+  <td>192.168.0.82</td><td>ZUZUPRINT</td><td>84:25:19:04:8A:11</td><td>ath1</td>
+</tr>
+
+<!-- 2.4 GHz — band label: "2.4 GHz" (conn=2.4G explicit) -->
+<tr valign="middle" align="center">
+  <td>192.168.0.24</td><td>--</td><td>10:D5:61:90:FC:E6</td><td>2.4G</td>
+</tr>
+<tr valign="middle" align="center">
+  <td>192.168.0.41</td><td>--</td><td>D4:57:63:A6:9F:92</td><td>2.4G</td>
+</tr>
+<tr valign="middle" align="center">
+  <td>192.168.0.51</td><td>amazon-4df2233fb2c9582e</td><td>9C:C8:E9:68:E6:69</td><td>2.4G</td>
+</tr>
+<tr valign="middle" align="center">
+  <td>192.168.0.68</td><td>ROCCO2</td><td>CE:87:1F:03:4C:74</td><td>2.4G</td>
+</tr>
+<tr valign="middle" align="center">
+  <td>192.168.0.78</td><td>MacBookPro</td><td>06:3B:35:A8:8A:DA</td><td>2.4G</td>
+</tr>
+
+</table>
+
+&nbsp;
+
+<table>
+<tr><td colspan="4"><b>Wireless Devices (Wireless intruders also show up here)</b></td></tr>
+<tr>
+  <td><span class="thead">IP Address</span></td>
+  <td><span class="thead">Device Name</span></td>
+  <td><span class="thead">MAC Address</span></td>
+</tr>
+
+<!-- In this section column 4 is MAC repeated — parser must skip via _MAC_RE. -->
+<tr valign="middle" align="center">
+  <td>192.168.0.10</td><td>Tapo_SmartPlug</td><td>E8:48:B8:C7:40:EA</td><td>E8:48:B8:C7:40:EA</td>
+</tr>
+<tr valign="middle" align="center">
+  <td>192.168.0.82</td><td>ZUZUPRINT</td><td>84:25:19:04:8A:11</td><td>84:25:19:04:8A:11</td>
+</tr>
+<tr valign="middle" align="center">
+  <td>192.168.0.51</td><td>amazon-4df2233fb2c9582e</td><td>9C:C8:E9:68:E6:69</td><td>9C:C8:E9:68:E6:69</td>
+</tr>
+<!-- Only in intruders table — must be excluded entirely (MAC in col4) -->
+<tr valign="middle" align="center">
+  <td>192.168.0.99</td><td>NewDevice</td><td>AA:BB:CC:DD:EE:FF</td><td>AA:BB:CC:DD:EE:FF</td>
+</tr>
+
+</table>
+</form>
+</body>
+</html>
