@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+
+## Self-Maintenance Rule
+After every major change update this CLAUDE.md file to reflect the current state.
+
 ## Running the TUI
 
 ```bash
