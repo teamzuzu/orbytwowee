@@ -27,6 +27,11 @@ def devices_html() -> str:
     return (FIXTURES / "DEV_device.htm").read_text()
 
 
+@pytest.fixture
+def stattbl_html() -> str:
+    return (FIXTURES / "RST_stattbl.htm").read_text()
+
+
 # ── session isolation ─────────────────────────────────────────────────────────
 
 

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import re
+from collections import deque
 from datetime import datetime
 
 import requests
@@ -157,6 +158,24 @@ def _band_label(conn: str) -> str:
     return conn or "—"
 
 
+def _parse_iface_stats(html: str) -> list[dict]:
+    """Parse RST_stattbl.htm → [{port, status, tx_bps, rx_bps}, ...]."""
+    result = []
+    for row_html in re.findall(r"<tr.*?</tr>", html, re.DOTALL):
+        cells = re.findall(r'<span class="(?:thead|ttext)">(.*?)</span>', row_html, re.DOTALL)
+        cells = [_strip(c) for c in cells]
+        if len(cells) < 8 or cells[0] in ("Port", ""):
+            continue
+        port, status = cells[0], cells[1]
+        try:
+            tx_bps = max(0, int(cells[5]))
+            rx_bps = max(0, int(cells[6]))
+        except (ValueError, IndexError):
+            tx_bps = rx_bps = 0
+        result.append({"port": port, "status": status, "tx_bps": tx_bps, "rx_bps": rx_bps})
+    return result
+
+
 # ── data model ────────────────────────────────────────────────────────────────
 
 
@@ -165,6 +184,7 @@ class RouterData:
         self.settings: dict[str, str] = {}
         self.info: dict[str, str] = {}
         self.devices: list[dict] = []
+        self.iface_stats: list[dict] = []
         self.last_updated: datetime | None = None
         self.error: str | None = None
 
@@ -173,6 +193,7 @@ class RouterData:
             self.settings = _parse_current_settings(_get("currentsetting.htm"))
             self.info = _parse_router_info(_get("ADVANCED_home2.htm"))
             self.devices = _parse_devices(_get("DEV_device.htm"))
+            self.iface_stats = _parse_iface_stats(_get("RST_stattbl.htm"))
             self.last_updated = datetime.now()
             self.error = None
         except Exception as e:
@@ -343,6 +364,93 @@ class DeviceSummaryPanel(Static):
         self.update("\n".join(lines))
 
 
+# ── throughput panel ─────────────────────────────────────────────────────────
+
+
+class ThroughputPanel(Static):
+    """Rolling WAN sparkline + per-interface Tx/Rx rates."""
+
+    MAX_HISTORY = 60
+    SPARK = "▁▂▃▄▅▆▇█"
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self._wan_tx: deque[int] = deque(maxlen=self.MAX_HISTORY)
+        self._wan_rx: deque[int] = deque(maxlen=self.MAX_HISTORY)
+
+    @staticmethod
+    def _fmt(bps: int) -> str:
+        if bps >= 1_048_576:
+            return f"{bps / 1_048_576:.1f} MB/s"
+        if bps >= 1024:
+            return f"{bps / 1024:.1f} KB/s"
+        return f"{bps} B/s"
+
+    def _sparkline(self, values: deque[int], colour: str) -> str:
+        recent = list(values)[-48:]
+        if not recent:
+            return "[dim]—[/]"
+        peak = max(recent) or 1
+        chars = "".join(self.SPARK[min(7, int(v / peak * 7))] for v in recent)
+        return f"[{colour}]{chars}[/]"
+
+    def update_data(self, d: RouterData) -> None:
+        wan = next((r for r in d.iface_stats if r["port"] == "WAN"), None)
+        if wan:
+            self._wan_tx.append(wan["tx_bps"])
+            self._wan_rx.append(wan["rx_bps"])
+
+        lines: list[str] = ["[bold cyan]● Bandwidth[/]", ""]
+
+        # WAN summary + sparklines
+        if self._wan_tx:
+            tx_now = self._fmt(self._wan_tx[-1])
+            rx_now = self._fmt(self._wan_rx[-1])
+            n = len(self._wan_tx)
+            secs = n * REFRESH_SECS
+            history_label = f"{secs // 60}m" if secs >= 60 else f"{secs}s"
+            lines += [
+                f"  WAN  [bold bright_yellow]↑ {tx_now:<12}[/]  [bold bright_green]↓ {rx_now}[/]",
+                "",
+                f"  {self._sparkline(self._wan_tx, 'bright_yellow')}  [dim]↑ upload[/]",
+                f"  {self._sparkline(self._wan_rx, 'bright_green')}  [dim]↓ download[/]",
+                f"  [dim]{n} polls · last {history_label}[/]",
+            ]
+        else:
+            lines.append("  [dim]Collecting data…[/]")
+
+        # Per-interface current rates
+        IFACE_LABELS = [
+            ("2.4 GHz WLAN", "2.4 GHz", "bright_yellow"),
+            ("5 GHz WLAN", "5 GHz  ", "bright_green"),
+            ("6 GHz WLAN", "6 GHz  ", "bright_magenta"),
+            ("WLAN Backhaul", "BH     ", "cyan"),
+        ]
+        rows = []
+        for prefix, label, colour in IFACE_LABELS:
+            iface = next((r for r in d.iface_stats if r["port"].startswith(prefix)), None)
+            if iface and (iface["tx_bps"] or iface["rx_bps"]):
+                rows.append((label, colour, iface["tx_bps"], iface["rx_bps"]))
+
+        if rows:
+            peak = max(max(tx, rx) for _, _, tx, rx in rows) or 1
+            lines += ["", "  [bold]Band         ↑ Tx/s          ↓ Rx/s[/]"]
+            for label, colour, tx, rx in rows:
+                BAR = 6
+                tx_bar = "█" * max(1, round(tx / peak * BAR))
+                rx_bar = "█" * max(1, round(rx / peak * BAR))
+                lines.append(
+                    f"  [{colour}]{label}[/]  "
+                    f"[bright_yellow]{tx_bar:<{BAR}}[/] {self._fmt(tx):<12}  "
+                    f"[bright_green]{rx_bar:<{BAR}}[/] {self._fmt(rx)}"
+                )
+
+        if d.error:
+            lines += ["", f"  [bright_red]Error: {d.error[:50]}[/]"]
+
+        self.update("\n".join(lines))
+
+
 # ── devices tab ───────────────────────────────────────────────────────────────
 
 
@@ -415,6 +523,12 @@ class OrbiApp(App):
         min-width: 38;
     }
 
+    ThroughputPanel {
+        border: round $primary-darken-2;
+        padding: 1 2;
+        height: 1fr;
+    }
+
     DevicesView   { height: 1fr; }
     #filter-input { margin: 0 0 1 0; }
     #device-table { height: 1fr; }
@@ -444,6 +558,8 @@ class OrbiApp(App):
                         yield WiFiBandsPanel(id="wifi-bands")
             with TabPane("Devices", id="devices"):
                 yield DevicesView(id="devices-view")
+            with TabPane("Bandwidth", id="bandwidth"):
+                yield ThroughputPanel(id="throughput")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -486,6 +602,7 @@ class OrbiApp(App):
         self.query_one("#wifi-bands", WiFiBandsPanel).update_data(d)
         self.query_one("#device-summary", DeviceSummaryPanel).update_data(d)
         self.query_one("#devices-view", DevicesView).update_devices(d.devices)
+        self.query_one("#throughput", ThroughputPanel).update_data(d)
         self._refresh_subtitle()
 
     # ── actions ────────────────────────────────────────────────────────────

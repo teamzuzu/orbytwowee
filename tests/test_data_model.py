@@ -20,6 +20,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 CURRENTSETTING_HTML = (FIXTURES / "currentsetting.htm").read_text()
 ADVANCED_HOME_HTML = (FIXTURES / "ADVANCED_home2.htm").read_text()
 DEVICES_HTML = (FIXTURES / "DEV_device.htm").read_text()
+STATTBL_HTML = (FIXTURES / "RST_stattbl.htm").read_text()
 
 
 def _html_for(path: str) -> str:
@@ -27,6 +28,7 @@ def _html_for(path: str) -> str:
         "currentsetting.htm": CURRENTSETTING_HTML,
         "ADVANCED_home2.htm": ADVANCED_HOME_HTML,
         "DEV_device.htm": DEVICES_HTML,
+        "RST_stattbl.htm": STATTBL_HTML,
     }
     return mapping.get(path, "")
 
@@ -61,6 +63,16 @@ class TestFetchAll:
 
     def test_populates_devices(self, loaded_data):
         assert len(loaded_data.devices) > 0
+
+    def test_populates_iface_stats(self, loaded_data):
+        assert len(loaded_data.iface_stats) > 0
+
+    def test_iface_stats_has_wan(self, loaded_data):
+        ports = [r["port"] for r in loaded_data.iface_stats]
+        assert "WAN" in ports
+
+    def test_iface_stats_empty_on_init(self):
+        assert RouterData().iface_stats == []
 
     def test_sets_last_updated(self, loaded_data):
         assert loaded_data.last_updated is not None
@@ -107,6 +119,7 @@ class TestFetchAll:
         assert "currentsetting.htm" in called
         assert "ADVANCED_home2.htm" in called
         assert "DEV_device.htm" in called
+        assert "RST_stattbl.htm" in called
 
 
 # ── RouterData properties ─────────────────────────────────────────────────────
