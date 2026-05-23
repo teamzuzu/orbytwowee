@@ -11,6 +11,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 # ── HTML fixture strings ───────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def currentsetting_html() -> str:
     return (FIXTURES / "currentsetting.htm").read_text()
@@ -28,11 +29,13 @@ def devices_html() -> str:
 
 # ── session isolation ─────────────────────────────────────────────────────────
 
+
 @pytest.fixture(autouse=True)
 def reset_orbi_session():
     """Reset the module-level HTTP session before and after every test
     so tests never leak state to each other."""
     import orbitui
+
     orbitui._session = None
     yield
     orbitui._session = None

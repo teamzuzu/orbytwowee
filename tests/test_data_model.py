@@ -18,15 +18,15 @@ FIXTURES = Path(__file__).parent / "fixtures"
 # Pre-load HTML fixtures as module-level constants so individual tests can
 # call _parse_* directly or inject them via the mock.
 CURRENTSETTING_HTML = (FIXTURES / "currentsetting.htm").read_text()
-ADVANCED_HOME_HTML  = (FIXTURES / "ADVANCED_home2.htm").read_text()
-DEVICES_HTML        = (FIXTURES / "DEV_device.htm").read_text()
+ADVANCED_HOME_HTML = (FIXTURES / "ADVANCED_home2.htm").read_text()
+DEVICES_HTML = (FIXTURES / "DEV_device.htm").read_text()
 
 
 def _html_for(path: str) -> str:
     mapping = {
-        "currentsetting.htm":  CURRENTSETTING_HTML,
-        "ADVANCED_home2.htm":  ADVANCED_HOME_HTML,
-        "DEV_device.htm":      DEVICES_HTML,
+        "currentsetting.htm": CURRENTSETTING_HTML,
+        "ADVANCED_home2.htm": ADVANCED_HOME_HTML,
+        "DEV_device.htm": DEVICES_HTML,
     }
     return mapping.get(path, "")
 
@@ -50,6 +50,7 @@ def empty_data() -> RouterData:
 
 
 # ── fetch_all ─────────────────────────────────────────────────────────────────
+
 
 class TestFetchAll:
     def test_populates_settings(self, loaded_data):
@@ -82,9 +83,11 @@ class TestFetchAll:
 
     def test_fetch_calls_all_three_endpoints(self):
         called = []
+
         def track(path):
             called.append(path)
             return _html_for(path)
+
         d = RouterData()
         with patch("orbitui._get", side_effect=track):
             d.fetch_all()
@@ -94,6 +97,7 @@ class TestFetchAll:
 
 
 # ── RouterData properties ─────────────────────────────────────────────────────
+
 
 class TestRouterDataProperties:
     def test_model(self, loaded_data):
@@ -179,6 +183,7 @@ class TestRouterDataProperties:
 
 # ── band_rows ─────────────────────────────────────────────────────────────────
 
+
 class TestBandRows:
     def test_returns_four_bands(self, loaded_data):
         rows = loaded_data.band_rows()
@@ -211,6 +216,7 @@ class TestBandRows:
 
 
 # ── band_counts ───────────────────────────────────────────────────────────────
+
 
 class TestBandCounts:
     def test_returns_dict(self, loaded_data):
