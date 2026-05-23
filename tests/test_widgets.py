@@ -14,6 +14,7 @@ from orbitui import (
     DevicesView,
     RouterData,
     RouterInfoPanel,
+    ThroughputPanel,
     WiFiBandsPanel,
     _kv,
 )
@@ -365,3 +366,100 @@ class TestDevicesView:
         view.update_devices([])
         assert mock_tbl.clear.called
         assert mock_tbl.add_row.call_count == 0
+
+
+# ── ThroughputPanel ───────────────────────────────────────────────────────────
+
+_IFACE_STATS = [
+    {"port": "WAN", "status": "1000M/Full", "tx_bps": 10240, "rx_bps": 20480},
+    {"port": "2.4 GHz WLAN b/g/n/ax", "status": "573.5M", "tx_bps": 5120, "rx_bps": 6144},
+    {"port": "5 GHz WLAN a/n/ac/ax/be", "status": "1201M", "tx_bps": 8192, "rx_bps": 4096},
+]
+
+
+def _make_throughput_data(iface_stats=None) -> RouterData:
+    d = _make_full_data()
+    d.iface_stats = iface_stats if iface_stats is not None else list(_IFACE_STATS)
+    return d
+
+
+class TestThroughputPanel:
+    def _render(self, d: RouterData, panel: ThroughputPanel | None = None) -> str:
+        if panel is None:
+            panel = ThroughputPanel()
+        panel.update = MagicMock()  # type: ignore[method-assign]
+        panel.update_data(d)
+        assert panel.update.called
+        return panel.update.call_args[0][0]
+
+    def test_shows_bandwidth_heading(self):
+        assert "Bandwidth" in self._render(_make_throughput_data())
+
+    def test_shows_wan_label(self):
+        assert "WAN" in self._render(_make_throughput_data())
+
+    def test_shows_upload_rate(self):
+        text = self._render(_make_throughput_data())
+        assert "10.0 KB/s" in text
+
+    def test_shows_download_rate(self):
+        text = self._render(_make_throughput_data())
+        assert "20.0 KB/s" in text
+
+    def test_shows_sparkline_after_first_poll(self):
+        panel = ThroughputPanel()
+        panel.update = MagicMock()  # type: ignore[method-assign]
+        panel.update_data(_make_throughput_data())
+        text = panel.update.call_args[0][0]
+        spark_chars = set("▁▂▃▄▅▆▇█")
+        assert any(c in text for c in spark_chars)
+
+    def test_collecting_message_before_first_data(self):
+        d = _make_throughput_data(iface_stats=[])
+        assert "Collecting" in self._render(d)
+
+    def test_shows_24ghz_band(self):
+        assert "2.4 GHz" in self._render(_make_throughput_data())
+
+    def test_shows_5ghz_band(self):
+        assert "5 GHz" in self._render(_make_throughput_data())
+
+    def test_history_accumulates_across_calls(self):
+        panel = ThroughputPanel()
+        panel.update = MagicMock()  # type: ignore[method-assign]
+        for _ in range(5):
+            panel.update_data(_make_throughput_data())
+        assert len(panel._wan_tx) == 5
+        assert len(panel._wan_rx) == 5
+
+    def test_history_capped_at_max(self):
+        panel = ThroughputPanel()
+        panel.update = MagicMock()  # type: ignore[method-assign]
+        for i in range(ThroughputPanel.MAX_HISTORY + 10):
+            d = _make_throughput_data()
+            d.iface_stats = [{"port": "WAN", "status": "1000M", "tx_bps": i, "rx_bps": i}]
+            panel.update_data(d)
+        assert len(panel._wan_tx) == ThroughputPanel.MAX_HISTORY
+
+    def test_fmt_bytes(self):
+        panel = ThroughputPanel()
+        assert panel._fmt(512) == "512 B/s"
+        assert panel._fmt(1024) == "1.0 KB/s"
+        assert panel._fmt(1_048_576) == "1.0 MB/s"
+
+    def test_no_band_rows_when_iface_stats_empty(self):
+        d = _make_full_data()
+        d.iface_stats = []
+        panel = ThroughputPanel()
+        panel.update = MagicMock()  # type: ignore[method-assign]
+        # should not raise; should show collecting message
+        panel.update_data(d)
+        assert panel.update.called
+
+    def test_error_shown_when_present(self):
+        d = _make_throughput_data()
+        d.error = "connection refused"
+        assert "connection refused" in self._render(d)
+
+    def test_no_error_section_when_clean(self):
+        assert "Error" not in self._render(_make_throughput_data())

@@ -14,6 +14,7 @@ from orbitui import (
     _ip_key,
     _parse_current_settings,
     _parse_devices,
+    _parse_iface_stats,
     _parse_router_info,
     _strip,
 )
@@ -426,3 +427,100 @@ class TestParseDevices:
         devices = _parse_devices(html)
         assert len(devices) == 1
         assert devices[0]["ip"] == "192.168.0.5"
+
+
+# ── _parse_iface_stats ────────────────────────────────────────────────────────
+
+
+class TestParseIfaceStats:
+    def test_returns_list(self, stattbl_html):
+        assert isinstance(_parse_iface_stats(stattbl_html), list)
+
+    def test_wan_present(self, stattbl_html):
+        stats = _parse_iface_stats(stattbl_html)
+        ports = [r["port"] for r in stats]
+        assert "WAN" in ports
+
+    def test_wan_has_nonzero_bps(self, stattbl_html):
+        stats = _parse_iface_stats(stattbl_html)
+        wan = next(r for r in stats if r["port"] == "WAN")
+        assert wan["tx_bps"] > 0
+        assert wan["rx_bps"] > 0
+
+    def test_24ghz_present(self, stattbl_html):
+        stats = _parse_iface_stats(stattbl_html)
+        ports = [r["port"] for r in stats]
+        assert any("2.4 GHz" in p for p in ports)
+
+    def test_5ghz_present(self, stattbl_html):
+        stats = _parse_iface_stats(stattbl_html)
+        ports = [r["port"] for r in stats]
+        assert any("5 GHz" in p for p in ports)
+
+    def test_each_row_has_required_keys(self, stattbl_html):
+        for row in _parse_iface_stats(stattbl_html):
+            assert "port" in row
+            assert "tx_bps" in row
+            assert "rx_bps" in row
+            assert "status" in row
+
+    def test_bps_values_are_ints(self, stattbl_html):
+        for row in _parse_iface_stats(stattbl_html):
+            assert isinstance(row["tx_bps"], int)
+            assert isinstance(row["rx_bps"], int)
+
+    def test_bps_values_non_negative(self, stattbl_html):
+        for row in _parse_iface_stats(stattbl_html):
+            assert row["tx_bps"] >= 0
+            assert row["rx_bps"] >= 0
+
+    def test_empty_html_returns_empty_list(self):
+        assert _parse_iface_stats("") == []
+
+    def test_inline_row(self):
+        html = """
+        <tr>
+          <td><span class="thead">WAN</span></td>
+          <td><span class="ttext">1000M/Full</span></td>
+          <td><span class="ttext">12345</span></td>
+          <td><span class="ttext">67890</span></td>
+          <td><span class="ttext">0</span></td>
+          <td><span class="ttext">1024</span></td>
+          <td><span class="ttext">2048</span></td>
+          <td><span class="ttext">1 day</span></td>
+        </tr>"""
+        rows = _parse_iface_stats(html)
+        assert len(rows) == 1
+        assert rows[0]["port"] == "WAN"
+        assert rows[0]["tx_bps"] == 1024
+        assert rows[0]["rx_bps"] == 2048
+
+    def test_skips_header_row(self):
+        html = """
+        <tr>
+          <td><span class="thead">Port</span></td>
+          <td><span class="thead">Status</span></td>
+          <td><span class="thead">TxPkts</span></td>
+          <td><span class="thead">RxPkts</span></td>
+          <td><span class="thead">Collisions</span></td>
+          <td><span class="thead">Tx B/s</span></td>
+          <td><span class="thead">Rx B/s</span></td>
+          <td><span class="thead">Up Time</span></td>
+        </tr>"""
+        assert _parse_iface_stats(html) == []
+
+    def test_empty_cells_give_zero_bps(self):
+        html = """
+        <tr>
+          <td><span class="thead">LAN4</span></td>
+          <td><span class="ttext"></span></td>
+          <td><span class="ttext"></span></td>
+          <td><span class="ttext"></span></td>
+          <td><span class="ttext"></span></td>
+          <td><span class="ttext"></span></td>
+          <td><span class="ttext"></span></td>
+          <td><span class="ttext"></span></td>
+        </tr>"""
+        rows = _parse_iface_stats(html)
+        assert rows[0]["tx_bps"] == 0
+        assert rows[0]["rx_bps"] == 0
