@@ -121,14 +121,31 @@ class TestGet:
         assert result == "refreshed"
 
     @rsps.activate
-    def test_returns_empty_if_retry_also_fails(self):
-        """Even after re-priming, a second 401 should return empty string."""
+    def test_raises_permission_error_if_retry_also_401(self):
+        """Persistent 401 after re-priming means wrong credentials — raise PermissionError."""
         _prime_response()
         rsps.add(GET, f"{ROUTER_URL}/data.htm", status=401)
         _prime_response()
         rsps.add(GET, f"{ROUTER_URL}/data.htm", status=401)
 
-        assert orbitui._get("data.htm") == ""
+        import pytest
+
+        with pytest.raises(PermissionError, match="401"):
+            orbitui._get("data.htm")
+
+    @rsps.activate
+    def test_session_cleared_after_persistent_401(self):
+        """Session must be reset so the next call creates a fresh one."""
+        _prime_response()
+        rsps.add(GET, f"{ROUTER_URL}/data.htm", status=401)
+        _prime_response()
+        rsps.add(GET, f"{ROUTER_URL}/data.htm", status=401)
+
+        import pytest
+
+        with pytest.raises(PermissionError):
+            orbitui._get("data.htm")
+        assert orbitui._session is None
 
     def test_returns_empty_on_connection_error(self):
         mock_session = MagicMock()

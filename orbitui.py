@@ -49,7 +49,12 @@ def _get(path: str) -> str:
         if r.status_code == 401:
             _session = _make_session()
             r = _session.get(f"http://{ROUTER_HOST}/{path}", timeout=10)
+            if r.status_code == 401:
+                _session = None
+                raise PermissionError("Authentication failed (HTTP 401) — check AUTH credentials")
         return r.text if r.ok else ""
+    except PermissionError:
+        raise
     except Exception:
         _session = None
         return ""
@@ -175,7 +180,7 @@ class RouterData:
 
     @property
     def model(self) -> str:
-        return self.settings.get("Model", "RBR750")
+        return self.settings.get("Model", "—")
 
     @property
     def firmware(self) -> str:

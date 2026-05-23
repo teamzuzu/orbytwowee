@@ -75,6 +75,19 @@ class TestFetchAll:
         assert d.error is not None
         assert "network dead" in d.error
 
+    def test_auth_failure_sets_error(self):
+        d = RouterData()
+        with patch("orbitui._get", side_effect=PermissionError("Authentication failed (HTTP 401)")):
+            d.fetch_all()
+        assert d.error is not None
+        assert "401" in d.error
+
+    def test_auth_failure_leaves_last_updated_none(self):
+        d = RouterData()
+        with patch("orbitui._get", side_effect=PermissionError("Authentication failed (HTTP 401)")):
+            d.fetch_all()
+        assert d.last_updated is None
+
     def test_last_updated_none_after_error(self):
         d = RouterData()
         with patch("orbitui._get", side_effect=RuntimeError("boom")):
@@ -178,7 +191,7 @@ class TestRouterDataProperties:
         assert RouterData().mode == "—"
 
     def test_model_fallback(self):
-        assert RouterData().model == "RBR750"  # hardcoded default
+        assert RouterData().model == "—"  # unknown when no data fetched
 
 
 # ── band_rows ─────────────────────────────────────────────────────────────────
