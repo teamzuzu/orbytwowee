@@ -7,9 +7,7 @@ assert on the rendered markup without spinning up the full terminal.
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import MagicMock
 
 from orbitui import (
     DeviceSummaryPanel,
@@ -20,8 +18,8 @@ from orbitui import (
     _kv,
 )
 
-
 # ── _kv helper ────────────────────────────────────────────────────────────────
+
 
 class TestKv:
     def test_formats_label_and_value(self):
@@ -36,7 +34,7 @@ class TestKv:
 
     def test_custom_label_width(self):
         result = _kv("X", "val", label_width=5)
-        assert "X" + " " * 4 in result   # 1 char + 4 spaces = 5
+        assert "X" + " " * 4 in result  # 1 char + 4 spaces = 5
 
     def test_dim_markup_present(self):
         assert "[dim]" in _kv("key", "value")
@@ -46,6 +44,7 @@ class TestKv:
 
 
 # ── RouterInfoPanel ───────────────────────────────────────────────────────────
+
 
 def _make_full_data() -> RouterData:
     """RouterData with every field populated."""
@@ -65,9 +64,27 @@ def _make_full_data() -> RouterData:
         "IP Address": "192.168.0.44",
     }
     d.devices = [
-        {"ip": "192.168.0.1",  "name": "", "mac": "AA:BB:CC:DD:EE:01", "conn": "eth0", "band": "Wired"},
-        {"ip": "192.168.0.10", "name": "TV", "mac": "AA:BB:CC:DD:EE:02", "conn": "ath1", "band": "5 GHz"},
-        {"ip": "192.168.0.20", "name": "", "mac": "AA:BB:CC:DD:EE:03", "conn": "2.4G", "band": "2.4 GHz"},
+        {
+            "ip": "192.168.0.1",
+            "name": "",
+            "mac": "AA:BB:CC:DD:EE:01",
+            "conn": "eth0",
+            "band": "Wired",
+        },
+        {
+            "ip": "192.168.0.10",
+            "name": "TV",
+            "mac": "AA:BB:CC:DD:EE:02",
+            "conn": "ath1",
+            "band": "5 GHz",
+        },
+        {
+            "ip": "192.168.0.20",
+            "name": "",
+            "mac": "AA:BB:CC:DD:EE:03",
+            "conn": "2.4G",
+            "band": "2.4 GHz",
+        },
     ]
     return d
 
@@ -120,6 +137,7 @@ class TestRouterInfoPanel:
 
 # ── WiFiBandsPanel ────────────────────────────────────────────────────────────
 
+
 class TestWiFiBandsPanel:
     def _render(self, d: RouterData) -> str:
         panel = WiFiBandsPanel()
@@ -168,6 +186,7 @@ class TestWiFiBandsPanel:
 
 # ── DeviceSummaryPanel ────────────────────────────────────────────────────────
 
+
 class TestDeviceSummaryPanel:
     def _render(self, d: RouterData) -> str:
         panel = DeviceSummaryPanel()
@@ -178,7 +197,7 @@ class TestDeviceSummaryPanel:
 
     def test_shows_total_count(self):
         d = _make_full_data()
-        assert "3" in self._render(d)   # 3 devices in _make_full_data
+        assert "3" in self._render(d)  # 3 devices in _make_full_data
 
     def test_shows_wired_band(self):
         assert "Wired" in self._render(_make_full_data())
@@ -210,8 +229,13 @@ class TestDeviceSummaryPanel:
     def test_band_with_many_devices_caps_bar_at_30(self):
         d = RouterData()
         d.devices = [
-            {"ip": f"192.168.0.{i}", "name": "", "mac": f"AA:BB:CC:DD:EE:{i:02X}",
-             "conn": "ath1", "band": "5 GHz"}
+            {
+                "ip": f"192.168.0.{i}",
+                "name": "",
+                "mac": f"AA:BB:CC:DD:EE:{i:02X}",
+                "conn": "ath1",
+                "band": "5 GHz",
+            }
             for i in range(40)
         ]
         text = self._render(d)
@@ -221,6 +245,7 @@ class TestDeviceSummaryPanel:
 
 
 # ── DevicesView ───────────────────────────────────────────────────────────────
+
 
 def _make_mock_table():
     tbl = MagicMock()
@@ -239,9 +264,21 @@ def _make_devices_view_with_mock_table():
 
 
 _SAMPLE_DEVICES = [
-    {"ip": "192.168.0.1",  "name": "",      "mac": "AA:BB:CC:DD:EE:01", "conn": "eth0", "band": "Wired"},
-    {"ip": "192.168.0.10", "name": "TV",    "mac": "AA:BB:CC:DD:EE:02", "conn": "ath1", "band": "5 GHz"},
-    {"ip": "192.168.0.20", "name": "",      "mac": "AA:BB:CC:DD:EE:03", "conn": "2.4G", "band": "2.4 GHz"},
+    {"ip": "192.168.0.1", "name": "", "mac": "AA:BB:CC:DD:EE:01", "conn": "eth0", "band": "Wired"},
+    {
+        "ip": "192.168.0.10",
+        "name": "TV",
+        "mac": "AA:BB:CC:DD:EE:02",
+        "conn": "ath1",
+        "band": "5 GHz",
+    },
+    {
+        "ip": "192.168.0.20",
+        "name": "",
+        "mac": "AA:BB:CC:DD:EE:03",
+        "conn": "2.4G",
+        "band": "2.4 GHz",
+    },
 ]
 
 

@@ -18,8 +18,8 @@ from orbitui import (
     _strip,
 )
 
-
 # ── _strip ────────────────────────────────────────────────────────────────────
+
 
 class TestStrip:
     def test_removes_tags(self):
@@ -43,29 +43,41 @@ class TestStrip:
 
 # ── _MAC_RE ───────────────────────────────────────────────────────────────────
 
+
 class TestMacRe:
-    @pytest.mark.parametrize("mac", [
-        "AA:BB:CC:DD:EE:FF",
-        "00:00:00:00:00:00",
-        "E8:48:B8:C7:40:EA",
-        "aa:bb:cc:dd:ee:ff",
-        "0a:1b:2c:3d:4e:5f",
-    ])
+    @pytest.mark.parametrize(
+        "mac",
+        [
+            "AA:BB:CC:DD:EE:FF",
+            "00:00:00:00:00:00",
+            "E8:48:B8:C7:40:EA",
+            "aa:bb:cc:dd:ee:ff",
+            "0a:1b:2c:3d:4e:5f",
+        ],
+    )
     def test_valid_macs(self, mac):
         assert _MAC_RE.match(mac), f"{mac!r} should match"
 
-    @pytest.mark.parametrize("value", [
-        "eth0", "ath1", "2.4G", "5G", "",
-        "AA:BB:CC:DD:EE",           # too short
-        "AA:BB:CC:DD:EE:FF:00",     # too long
-        "GG:BB:CC:DD:EE:FF",        # invalid hex
-        "192.168.0.1",
-    ])
+    @pytest.mark.parametrize(
+        "value",
+        [
+            "eth0",
+            "ath1",
+            "2.4G",
+            "5G",
+            "",
+            "AA:BB:CC:DD:EE",  # too short
+            "AA:BB:CC:DD:EE:FF:00",  # too long
+            "GG:BB:CC:DD:EE:FF",  # invalid hex
+            "192.168.0.1",
+        ],
+    )
     def test_non_macs(self, value):
         assert not _MAC_RE.match(value), f"{value!r} should not match"
 
 
 # ── _ip_key ───────────────────────────────────────────────────────────────────
+
 
 class TestIpKey:
     def test_standard_ip(self):
@@ -93,34 +105,38 @@ class TestIpKey:
 
 # ── _band_label ───────────────────────────────────────────────────────────────
 
+
 class TestBandLabel:
-    @pytest.mark.parametrize("conn,expected", [
-        # Wired
-        ("eth0",   "Wired"),
-        ("eth1",   "Wired"),
-        ("ETH0",   "Wired"),    # case-insensitive
-        # 2.4 GHz
-        ("ath0",   "2.4 GHz"),
-        ("2.4G",   "2.4 GHz"),
-        ("2.4GHz", "2.4 GHz"),
-        ("2.4g",   "2.4 GHz"),
-        # 5 GHz backhaul — matched before plain 5G
-        ("ath2",   "5 GHz BH"),
-        ("5G-2",   "5 GHz BH"),
-        ("5g-2",   "5 GHz BH"),
-        # 5 GHz
-        ("ath1",   "5 GHz"),
-        ("5G",     "5 GHz"),
-        ("5GHz",   "5 GHz"),
-        ("5g",     "5 GHz"),
-        # 6 GHz
-        ("ath3",   "6 GHz"),
-        ("6G",     "6 GHz"),
-        ("6GHz",   "6 GHz"),
-        # Unknown / pass-through
-        ("wlan0",  "wlan0"),
-        ("",       "—"),
-    ])
+    @pytest.mark.parametrize(
+        "conn,expected",
+        [
+            # Wired
+            ("eth0", "Wired"),
+            ("eth1", "Wired"),
+            ("ETH0", "Wired"),  # case-insensitive
+            # 2.4 GHz
+            ("ath0", "2.4 GHz"),
+            ("2.4G", "2.4 GHz"),
+            ("2.4GHz", "2.4 GHz"),
+            ("2.4g", "2.4 GHz"),
+            # 5 GHz backhaul — matched before plain 5G
+            ("ath2", "5 GHz BH"),
+            ("5G-2", "5 GHz BH"),
+            ("5g-2", "5 GHz BH"),
+            # 5 GHz
+            ("ath1", "5 GHz"),
+            ("5G", "5 GHz"),
+            ("5GHz", "5 GHz"),
+            ("5g", "5 GHz"),
+            # 6 GHz
+            ("ath3", "6 GHz"),
+            ("6G", "6 GHz"),
+            ("6GHz", "6 GHz"),
+            # Unknown / pass-through
+            ("wlan0", "wlan0"),
+            ("", "—"),
+        ],
+    )
     def test_all_cases(self, conn, expected):
         assert _band_label(conn) == expected
 
@@ -131,6 +147,7 @@ class TestBandLabel:
 
 
 # ── _parse_current_settings ───────────────────────────────────────────────────
+
 
 class TestParseCurrentSettings:
     def test_full_fixture(self, currentsetting_html):
@@ -143,8 +160,15 @@ class TestParseCurrentSettings:
 
     def test_all_expected_keys_present(self, currentsetting_html):
         data = _parse_current_settings(currentsetting_html)
-        for key in ("Firmware", "Model", "InternetConnectionStatus", "SOAPVersion",
-                    "LoginMethod", "DeviceMode", "isBlankState"):
+        for key in (
+            "Firmware",
+            "Model",
+            "InternetConnectionStatus",
+            "SOAPVersion",
+            "LoginMethod",
+            "DeviceMode",
+            "isBlankState",
+        ):
             assert key in data, f"Missing key: {key}"
 
     def test_empty_html_returns_empty_dict(self):
@@ -173,6 +197,7 @@ class TestParseCurrentSettings:
 
 
 # ── _parse_router_info ────────────────────────────────────────────────────────
+
 
 class TestParseRouterInfo:
     def test_firmware_version(self, advanced_home_html):
@@ -203,7 +228,9 @@ class TestParseRouterInfo:
         assert _parse_router_info(advanced_home_html)["2.4 GHz Channel"] == "Auto (3)"
 
     def test_band_24ghz_speed(self, advanced_home_html):
-        assert _parse_router_info(advanced_home_html)["2.4 GHz Wireless mode:"] == "Up to 573.5 Mbps"
+        assert (
+            _parse_router_info(advanced_home_html)["2.4 GHz Wireless mode:"] == "Up to 573.5 Mbps"
+        )
 
     def test_band_5ghz_channel(self, advanced_home_html):
         assert _parse_router_info(advanced_home_html)["5 GHz Channel"] == "36 + 40(P) + 44 + 48"
@@ -278,6 +305,7 @@ class TestParseRouterInfo:
 
 
 # ── _parse_devices ────────────────────────────────────────────────────────────
+
 
 class TestParseDevices:
     def test_correct_device_count(self, devices_html):

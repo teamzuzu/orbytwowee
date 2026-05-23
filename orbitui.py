@@ -5,17 +5,16 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import Optional
 
 import requests
 from requests.auth import HTTPBasicAuth
+from textual import on, work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import DataTable, Footer, Header, Input, Static, TabbedContent, TabPane
-from textual import on, work
 
 # ── config ──────────────────────────────────────────────────────────────────
 
@@ -29,7 +28,7 @@ REFRESH_SECS = 30
 # that cookie (plus Basic Auth) return 200.  We keep a persistent session so
 # the cookie survives across calls.
 
-_session: Optional["requests.Session"] = None
+_session: requests.Session | None = None
 
 
 def _make_session() -> requests.Session:
@@ -82,8 +81,10 @@ def _parse_router_info(html: str) -> dict[str, str]:
 
     # Parse structured label→value rows via their CSS classes
     for row in re.findall(r"<tr[^>]*>(.*?)</tr>", html, re.DOTALL):
-        menu    = re.search(r'<td[^>]*class="basic-text-menu[^"]*"[^>]*>(.*?)</td>',    row, re.DOTALL)
-        content = re.search(r'<td[^>]*class="basic-text-content[^"]*"[^>]*>(.*?)</td>', row, re.DOTALL)
+        menu = re.search(r'<td[^>]*class="basic-text-menu[^"]*"[^>]*>(.*?)</td>', row, re.DOTALL)
+        content = re.search(
+            r'<td[^>]*class="basic-text-content[^"]*"[^>]*>(.*?)</td>', row, re.DOTALL
+        )
         if menu and content:
             k = _strip(menu.group(1))
             v = _strip(content.group(1))
@@ -108,9 +109,9 @@ def _parse_devices(html: str) -> list[dict]:
         if len(cells) < 3 or not re.match(r"\d+\.\d+\.\d+", cells[0]):
             continue
 
-        ip   = cells[0]
+        ip = cells[0]
         name = cells[1] if cells[1] != "--" else ""
-        mac  = cells[2]
+        mac = cells[2]
         conn = cells[3] if len(cells) > 3 else ""
 
         # The "Wireless Devices (intruders)" section repeats the MAC in column 4 —
@@ -122,7 +123,9 @@ def _parse_devices(html: str) -> list[dict]:
             continue
         seen.add(mac)
 
-        devices.append({"ip": ip, "name": name, "mac": mac, "conn": conn, "band": _band_label(conn)})
+        devices.append(
+            {"ip": ip, "name": name, "mac": mac, "conn": conn, "band": _band_label(conn)}
+        )
 
     return sorted(devices, key=lambda d: _ip_key(d["ip"]))
 
@@ -151,19 +154,20 @@ def _band_label(conn: str) -> str:
 
 # ── data model ────────────────────────────────────────────────────────────────
 
+
 class RouterData:
     def __init__(self) -> None:
-        self.settings:    dict[str, str] = {}
-        self.info:        dict[str, str] = {}
-        self.devices:     list[dict]     = []
-        self.last_updated: Optional[datetime] = None
-        self.error:        Optional[str]      = None
+        self.settings: dict[str, str] = {}
+        self.info: dict[str, str] = {}
+        self.devices: list[dict] = []
+        self.last_updated: datetime | None = None
+        self.error: str | None = None
 
     def fetch_all(self) -> None:
         try:
             self.settings = _parse_current_settings(_get("currentsetting.htm"))
-            self.info     = _parse_router_info(_get("ADVANCED_home2.htm"))
-            self.devices  = _parse_devices(_get("DEV_device.htm"))
+            self.info = _parse_router_info(_get("ADVANCED_home2.htm"))
+            self.devices = _parse_devices(_get("DEV_device.htm"))
             self.last_updated = datetime.now()
             self.error = None
         except Exception as e:
@@ -176,7 +180,7 @@ class RouterData:
     @property
     def firmware(self) -> str:
         fw = self.info.get("Firmware Version", self.settings.get("Firmware", "—"))
-        return fw.split("_")[0]   # trim the build suffix
+        return fw.split("_")[0]  # trim the build suffix
 
     @property
     def internet_up(self) -> bool:
@@ -214,10 +218,22 @@ class RouterData:
 
     def band_rows(self) -> list[tuple[str, str, str]]:
         return [
-            ("2.4 GHz",   self.info.get("2.4 GHz Channel",  "?"), self.info.get("2.4 GHz Wireless mode:", "—")),
-            ("5 GHz",     self.info.get("5 GHz Channel",    "?"), self.info.get("5 GHz Wireless mode:",   "—")),
-            ("5 GHz BH",  self.info.get("5G-2 Channel",     "?"), self.info.get("5G-2 Mode:",              "—")),
-            ("6 GHz",     self.info.get("6 GHz Channel",    "?"), self.info.get("6 GHz Wireless mode:",   "—")),
+            (
+                "2.4 GHz",
+                self.info.get("2.4 GHz Channel", "?"),
+                self.info.get("2.4 GHz Wireless mode:", "—"),
+            ),
+            (
+                "5 GHz",
+                self.info.get("5 GHz Channel", "?"),
+                self.info.get("5 GHz Wireless mode:", "—"),
+            ),
+            ("5 GHz BH", self.info.get("5G-2 Channel", "?"), self.info.get("5G-2 Mode:", "—")),
+            (
+                "6 GHz",
+                self.info.get("6 GHz Channel", "?"),
+                self.info.get("6 GHz Wireless mode:", "—"),
+            ),
         ]
 
     def band_counts(self) -> dict[str, int]:
@@ -229,6 +245,7 @@ class RouterData:
 
 # ── panel widgets ─────────────────────────────────────────────────────────────
 
+
 def _kv(label: str, value: str, label_width: int = 14) -> str:
     return f"  [dim]{label:<{label_width}}[/]  {value}"
 
@@ -236,53 +253,53 @@ def _kv(label: str, value: str, label_width: int = 14) -> str:
 class RouterInfoPanel(Static):
     def update_data(self, d: RouterData) -> None:
         status_color = "bright_green" if d.internet_up else "bright_red"
-        status_text  = "UP" if d.internet_up else "DOWN"
+        status_text = "UP" if d.internet_up else "DOWN"
 
         lines = [
             "[bold cyan]● Router Info[/]",
             "",
-            _kv("Model",    f"[bold]{d.model}[/]"),
+            _kv("Model", f"[bold]{d.model}[/]"),
             _kv("Firmware", d.firmware),
-            _kv("Mode",     d.mode),
+            _kv("Mode", d.mode),
             "",
-            _kv("Internet",  f"[{status_color}]● {status_text}[/]"),
-            _kv("LAN IP",   d.lan_ip),
-            _kv("LAN MAC",  d.lan_mac),
-            _kv("Gateway",  d.gateway),
-            _kv("DNS",      d.dns),
+            _kv("Internet", f"[{status_color}]● {status_text}[/]"),
+            _kv("LAN IP", d.lan_ip),
+            _kv("LAN MAC", d.lan_mac),
+            _kv("Gateway", d.gateway),
+            _kv("DNS", d.dns),
             "",
-            _kv("SSID",     f"[bright_yellow]{d.ssid}[/]"),
+            _kv("SSID", f"[bright_yellow]{d.ssid}[/]"),
         ]
         self.update("\n".join(lines))
 
 
 class WiFiBandsPanel(Static):
     BAND_COLORS = {
-        "2.4 GHz":  "bright_yellow",
-        "5 GHz":    "bright_green",
+        "2.4 GHz": "bright_yellow",
+        "5 GHz": "bright_green",
         "5 GHz BH": "cyan",
-        "6 GHz":    "bright_magenta",
+        "6 GHz": "bright_magenta",
     }
     MBPS_THRESHOLDS = [200, 400, 600, 800, 1000, 1500, 2000, 3000]
 
     def update_data(self, d: RouterData) -> None:
         counts = d.band_counts()
-        lines  = ["[bold cyan]◈ WiFi Bands[/]", ""]
+        lines = ["[bold cyan]◈ WiFi Bands[/]", ""]
 
         for band, channel, speed_raw in d.band_rows():
-            color   = self.BAND_COLORS.get(band, "white")
-            ch_str  = f"ch {channel:>4}" if channel and channel != "?" else "ch    ?"
-            n_devs  = counts.get(band, 0)
+            color = self.BAND_COLORS.get(band, "white")
+            ch_str = f"ch {channel:>4}" if channel and channel != "?" else "ch    ?"
+            n_devs = counts.get(band, 0)
             devs_str = f"{n_devs:>2} dev" if n_devs else " — dev"
 
             mbps_m = re.search(r"([\d.]+)\s*Mbps", speed_raw)
             if mbps_m:
-                mbps   = float(mbps_m.group(1))
+                mbps = float(mbps_m.group(1))
                 filled = sum(1 for t in self.MBPS_THRESHOLDS if mbps >= t)
-                bar    = "█" * filled + "░" * (8 - filled)
+                bar = "█" * filled + "░" * (8 - filled)
                 speed_str = f"{int(mbps):>5} Mbps"
             else:
-                bar       = "░" * 8
+                bar = "░" * 8
                 speed_str = "    — Mbps"
 
             lines.append(
@@ -295,17 +312,17 @@ class WiFiBandsPanel(Static):
 
 class DeviceSummaryPanel(Static):
     BAND_COLORS = {
-        "Wired":    "bright_cyan",
-        "2.4 GHz":  "bright_yellow",
-        "5 GHz":    "bright_green",
+        "Wired": "bright_cyan",
+        "2.4 GHz": "bright_yellow",
+        "5 GHz": "bright_green",
         "5 GHz BH": "cyan",
-        "6 GHz":    "bright_magenta",
+        "6 GHz": "bright_magenta",
     }
 
     def update_data(self, d: RouterData) -> None:
         counts = d.band_counts()
-        total  = len(d.devices)
-        lines  = [f"[bold cyan]◉ Devices  [bright_white]{total} total[/][/]", ""]
+        total = len(d.devices)
+        lines = [f"[bold cyan]◉ Devices  [bright_white]{total} total[/][/]", ""]
 
         for band in ("Wired", "2.4 GHz", "5 GHz", "5 GHz BH", "6 GHz"):
             n = counts.get(band, 0)
@@ -323,15 +340,16 @@ class DeviceSummaryPanel(Static):
 
 # ── devices tab ───────────────────────────────────────────────────────────────
 
+
 class DevicesView(Widget):
     filter_text: reactive[str] = reactive("")
 
     BAND_COLORS = {
-        "Wired":    "bright_cyan",
-        "2.4 GHz":  "bright_yellow",
-        "5 GHz":    "bright_green",
+        "Wired": "bright_cyan",
+        "2.4 GHz": "bright_yellow",
+        "5 GHz": "bright_green",
         "5 GHz BH": "cyan",
-        "6 GHz":    "bright_magenta",
+        "6 GHz": "bright_magenta",
     }
 
     def compose(self) -> ComposeResult:
@@ -354,8 +372,8 @@ class DevicesView(Widget):
         for d in getattr(self, "_all_devices", []):
             if q and not any(q in d[k].lower() for k in ("ip", "name", "mac", "band", "conn")):
                 continue
-            bc      = self.BAND_COLORS.get(d["band"], "white")
-            name    = d["name"] if d["name"] else "[dim]—[/]"
+            bc = self.BAND_COLORS.get(d["band"], "white")
+            name = d["name"] if d["name"] else "[dim]—[/]"
             tbl.add_row(
                 d["ip"],
                 name,
@@ -371,6 +389,7 @@ class DevicesView(Widget):
 
 
 # ── app ───────────────────────────────────────────────────────────────────────
+
 
 class OrbiApp(App):
     CSS = """
@@ -397,15 +416,15 @@ class OrbiApp(App):
     """
 
     BINDINGS = [
-        Binding("r",  "refresh",      "Refresh",     show=True),
-        Binding("f5", "refresh",      "Refresh",     show=False),
-        Binding("f",  "focus_filter", "Filter",      show=True),
-        Binding("q",  "quit",         "Quit",        show=True),
+        Binding("r", "refresh", "Refresh", show=True),
+        Binding("f5", "refresh", "Refresh", show=False),
+        Binding("f", "focus_filter", "Filter", show=True),
+        Binding("q", "quit", "Quit", show=True),
     ]
 
     def __init__(self) -> None:
         super().__init__()
-        self._data     = RouterData()
+        self._data = RouterData()
         self._countdown = REFRESH_SECS
 
     def compose(self) -> ComposeResult:
@@ -423,7 +442,7 @@ class OrbiApp(App):
         yield Footer()
 
     def on_mount(self) -> None:
-        self.title     = f"Orbi Monitor  ·  {ROUTER_HOST}"
+        self.title = f"Orbi Monitor  ·  {ROUTER_HOST}"
         self.sub_title = "Loading…"
         self._do_fetch()
         self.set_interval(1.0, self._tick)
@@ -443,7 +462,7 @@ class OrbiApp(App):
             self.sub_title = f"[red]Error: {d.error[:60]}[/]  ⟳ {self._countdown}s"
             return
         status = "● UP" if d.internet_up else "○ DOWN"
-        last   = d.last_updated.strftime("%H:%M:%S") if d.last_updated else "—"
+        last = d.last_updated.strftime("%H:%M:%S") if d.last_updated else "—"
         self.sub_title = (
             f"Internet {status}  |  {len(d.devices)} devices  "
             f"|  updated {last}  |  ⟳ {self._countdown}s"
@@ -458,10 +477,10 @@ class OrbiApp(App):
 
     def _update_ui(self) -> None:
         d = self._data
-        self.query_one("#router-info",   RouterInfoPanel).update_data(d)
-        self.query_one("#wifi-bands",    WiFiBandsPanel).update_data(d)
-        self.query_one("#device-summary",DeviceSummaryPanel).update_data(d)
-        self.query_one("#devices-view",  DevicesView).update_devices(d.devices)
+        self.query_one("#router-info", RouterInfoPanel).update_data(d)
+        self.query_one("#wifi-bands", WiFiBandsPanel).update_data(d)
+        self.query_one("#device-summary", DeviceSummaryPanel).update_data(d)
+        self.query_one("#devices-view", DevicesView).update_devices(d.devices)
         self._refresh_subtitle()
 
     # ── actions ────────────────────────────────────────────────────────────

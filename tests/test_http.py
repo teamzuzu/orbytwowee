@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 import requests as req
 import responses as rsps
 from responses import GET
@@ -17,7 +16,7 @@ from responses import GET
 import orbitui
 
 ROUTER_URL = f"http://{orbitui.ROUTER_HOST}"
-PRIME_URL  = f"{ROUTER_URL}/ADVANCED_home2.htm"
+PRIME_URL = f"{ROUTER_URL}/ADVANCED_home2.htm"
 XSRF_COOKIE = {"Set-Cookie": "XSRF_TOKEN=testtoken123; Path=/"}
 
 
@@ -27,6 +26,7 @@ def _prime_response(status: int = 401) -> None:
 
 
 # ── _make_session ──────────────────────────────────────────────────────────────
+
 
 class TestMakeSession:
     @rsps.activate
@@ -65,6 +65,7 @@ class TestMakeSession:
 
 # ── _get ──────────────────────────────────────────────────────────────────────
 
+
 class TestGet:
     @rsps.activate
     def test_returns_body_on_200(self):
@@ -82,7 +83,7 @@ class TestGet:
 
     @rsps.activate
     def test_reuses_existing_session(self):
-        _prime_response()                                          # priming
+        _prime_response()  # priming
         rsps.add(GET, f"{ROUTER_URL}/a.htm", status=200, body="a")
         rsps.add(GET, f"{ROUTER_URL}/b.htm", status=200, body="b")
 
